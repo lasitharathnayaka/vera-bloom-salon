@@ -28,6 +28,7 @@ import PosCheckoutPage from '../pages/admin/PosCheckoutPage';
 
 // Stylist Pages
 import StylistDashboardPage from '../pages/stylist/StylistDashboardPage';
+import ClientFormulasPage from '../pages/stylist/ClientFormulasPage';
 import StylistSchedulePage from '../pages/stylist/StylistSchedulePage';
 import StylistAppointmentsPage from '../pages/stylist/StylistAppointmentsPage';
 import StylistProfilePage from '../pages/stylist/StylistProfilePage';
@@ -66,7 +67,9 @@ export default function AppRoutes() {
       {/* Stylist Routes */}
       <Route path="/stylist" element={<StylistLayout />}>
         <Route index element={<StylistDashboardPage />} />
+        <Route path="formulas" element={<ClientFormulasPage />} />
         <Route path="schedule" element={<StylistSchedulePage />} />
+        <Route path="earnings" element={<StylistSchedulePage />} />
         <Route path="appointments" element={<StylistAppointmentsPage />} />
         <Route path="profile" element={<StylistProfilePage />} />
       </Route>
