@@ -15,7 +15,6 @@ import ServicesPage from '../pages/customer/ServicesPage';
 import BridalPage from '../pages/customer/BridalPage';
 import LookbookPage from '../pages/customer/LookbookPage';
 import BookingPage from '../pages/customer/BookingPage';
-import MyAppointmentsPage from '../pages/customer/MyAppointmentsPage';
 import CustomerProfilePage from '../pages/customer/ProfilePage';
 
 // Admin Pages
@@ -45,9 +44,11 @@ export default function AppRoutes() {
         <Route path="bridal" element={<BridalPage />} />
         <Route path="lookbook" element={<LookbookPage />} />
         <Route path="booking" element={<BookingPage />} />
-        <Route path="appointments" element={<MyAppointmentsPage />} />
-        <Route path="profile" element={<CustomerProfilePage />} />
       </Route>
+
+      {/* Customer Sanctuary Portal (dedicated sidebar layout) */}
+      <Route path="/profile" element={<CustomerProfilePage />} />
+      <Route path="/appointments" element={<Navigate to="/profile" replace />} />
 
       {/* Admin Routes */}
       <Route path="/admin" element={<AdminLayout />}>
