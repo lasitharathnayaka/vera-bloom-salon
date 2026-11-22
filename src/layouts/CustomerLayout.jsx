@@ -70,6 +70,12 @@ export default function CustomerLayout() {
           {/* Right Actions */}
           <div className="flex items-center gap-3">
             <Link
+              to="/login"
+              className="hidden text-[12.5px] font-medium text-[#5F5C55] transition-colors hover:text-[#2A2927] sm:inline"
+            >
+              Sign In
+            </Link>
+            <Link
               to="/booking"
               className="rounded-lg bg-[#4A5B4B] px-5 py-2.5 text-[12px] font-medium tracking-wide text-[#FAF8F5] shadow-xs transition-colors hover:bg-[#3B4A3C]"
             >
