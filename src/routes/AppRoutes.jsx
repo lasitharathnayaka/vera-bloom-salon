@@ -21,9 +21,11 @@ import CustomerProfilePage from '../pages/customer/ProfilePage';
 // Admin Pages
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import ManageAppointmentsPage from '../pages/admin/ManageAppointmentsPage';
+import BridalInquiriesPage from '../pages/admin/BridalInquiriesPage';
 import ManageServicesPage from '../pages/admin/ManageServicesPage';
 import ManageStylistsPage from '../pages/admin/ManageStylistsPage';
 import ManageCustomersPage from '../pages/admin/ManageCustomersPage';
+import PosCheckoutPage from '../pages/admin/PosCheckoutPage';
 
 // Stylist Pages
 import StylistDashboardPage from '../pages/stylist/StylistDashboardPage';
@@ -53,9 +55,11 @@ export default function AppRoutes() {
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminDashboardPage />} />
         <Route path="appointments" element={<ManageAppointmentsPage />} />
+        <Route path="bridal" element={<BridalInquiriesPage />} />
         <Route path="services" element={<ManageServicesPage />} />
         <Route path="stylists" element={<ManageStylistsPage />} />
         <Route path="customers" element={<ManageCustomersPage />} />
+        <Route path="pos" element={<PosCheckoutPage />} />
       </Route>
 
       {/* Stylist Routes */}
