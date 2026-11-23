@@ -22,6 +22,17 @@ import ritualSkin from '../../assets/ritual-skin.jpg';
 import ritualBridal from '../../assets/ritual-bridal.jpg';
 import heroPortrait from '../../assets/hero-portrait.jpg';
 import bridalPrep from '../../assets/bridal-prep.jpg';
+import wallpaperSanctuary from '../../assets/wallpaper-sanctuary.jpg';
+import wallpaperBotanicals from '../../assets/wallpaper-botanicals.jpg';
+import wallpaperSpaSuite from '../../assets/wallpaper-spa-suite.jpg';
+import wallpaperBridalAtelier from '../../assets/wallpaper-bridal-atelier.jpg';
+
+const HERO_WALLPAPERS = [
+  { src: wallpaperSpaSuite, label: 'Scalp Spa Suite' },
+  { src: wallpaperBotanicals, label: 'Hair Couture' },
+  { src: wallpaperSanctuary, label: 'Sanctuary Floor' },
+  { src: wallpaperBridalAtelier, label: 'Bridal Atelier' },
+];
 
 const CATEGORY_IMAGES = {
   hair: ritualHair,
@@ -52,6 +63,14 @@ export default function ServicesPage() {
   const [categories, setCategories] = useState(SERVICE_CATEGORIES);
   const [activeCategory, setActiveCategory] = useState(initialCategory);
   const [searchQuery, setSearchQuery] = useState('');
+  const [wallpaperIdx, setWallpaperIdx] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setWallpaperIdx((prev) => (prev + 1) % HERO_WALLPAPERS.length);
+    }, 5500);
+    return () => clearInterval(timer);
+  }, []);
 
   // Pre-select the two signature rituals so the summary card is immediately populated
   const [selectedIds, setSelectedIds] = useState([
@@ -176,27 +195,34 @@ export default function ServicesPage() {
 
   return (
     <div className="bg-[#FAF8F5] pb-24">
-      {/* ================= EDITORIAL DARK-SAGE HERO BANNER ================= */}
+      {/* ================= LIVE WALLPAPER EDITORIAL HERO BANNER ================= */}
       <section className="relative overflow-hidden bg-[#222B23] text-[#FAF8F5]">
-        <img
-          src={ritualHair}
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-22"
-        />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#1D251E]/80 via-[#222B23]/88 to-[#222B23]" />
+        {HERO_WALLPAPERS.map((wp, idx) => (
+          <img
+            key={wp.label}
+            src={wp.src}
+            alt=""
+            aria-hidden="true"
+            className={`pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
+              idx === wallpaperIdx
+                ? 'opacity-100 animate-[kenBurnsSlow_14s_ease-in-out_infinite_alternate]'
+                : 'opacity-0'
+            }`}
+          />
+        ))}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#171E18]/55 via-[#1E2720]/55 to-[#1E2720]/80" />
 
-        <div className="relative z-10 mx-auto max-w-5xl px-6 py-16 text-center lg:px-10 lg:py-20">
-          <span className="inline-flex items-center gap-2 rounded-full border border-[#EFE0C6]/30 bg-[#EFE0C6]/15 px-4 py-1.5 text-[10px] font-semibold tracking-[0.24em] text-[#EFE0C6] uppercase backdrop-blur-xs">
+        <div className="relative z-10 mx-auto max-w-5xl px-6 py-16 text-center lg:px-10 lg:py-22">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#EFE0C6]/35 bg-[#1D251E]/50 px-4 py-1.5 text-[10px] font-semibold tracking-[0.24em] text-[#EFE0C6] uppercase backdrop-blur-md">
             <Sparkles className="h-3 w-3" />
             Botanical Sanctuary &bull; Curated Menu
           </span>
 
-          <h1 className="mt-5 font-serif text-4xl font-medium tracking-tight text-[#FAF8F5] sm:text-5xl lg:text-[56px]">
+          <h1 className="mt-5 font-serif text-4xl font-medium tracking-tight text-[#FAF8F5] drop-shadow-xs sm:text-5xl lg:text-[56px]">
             Our Botanical <span className="italic text-[#EFE0C6]">Menu</span>
           </h1>
 
-          <p className="mx-auto mt-3.5 max-w-xl text-[14px] leading-relaxed text-[#C9D2CA]">
+          <p className="mx-auto mt-3.5 max-w-xl text-[14px] leading-relaxed text-[#E8EDE9]">
             Curated hair, skin, and body rituals formulated with cold-pressed
             organic botanicals and tailored to your natural essence.
           </p>
@@ -204,15 +230,32 @@ export default function ServicesPage() {
           {/* Search Input Bar */}
           <div className="mx-auto mt-8 max-w-md">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A8B4A9]" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#DCE4DD]" />
               <input
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search rituals, botanicals, or treatments..."
-                className="w-full rounded-full border border-white/20 bg-white/10 py-3 pl-11 pr-5 text-[13px] text-[#FAF8F5] placeholder:text-[#A8B4A9] backdrop-blur-md transition-colors focus:border-[#EFE0C6] focus:bg-white/15 focus:outline-none"
+                className="w-full rounded-full border border-white/25 bg-[#1B231C]/55 py-3 pl-11 pr-5 text-[13px] text-[#FAF8F5] placeholder:text-[#C8D3C9] backdrop-blur-md transition-colors focus:border-[#EFE0C6] focus:bg-[#1B231C]/75 focus:outline-none"
               />
             </div>
+          </div>
+
+          {/* Subtle Live Wallpaper Indicator Pills */}
+          <div className="mt-6 flex items-center justify-center gap-2">
+            {HERO_WALLPAPERS.map((wp, idx) => (
+              <button
+                key={wp.label}
+                type="button"
+                aria-label={`Show ${wp.label} wallpaper`}
+                onClick={() => setWallpaperIdx(idx)}
+                className={`h-1.5 cursor-pointer rounded-full transition-all ${
+                  idx === wallpaperIdx
+                    ? 'w-8 bg-[#EFE0C6]'
+                    : 'w-2.5 bg-white/40 hover:bg-white/70'
+                }`}
+              />
+            ))}
           </div>
         </div>
       </section>
