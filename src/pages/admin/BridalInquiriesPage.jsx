@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AlignLeft,
   Calendar,
@@ -12,6 +12,7 @@ import {
   SlidersHorizontal,
   Users,
 } from 'lucide-react';
+import { fetchBridalInquiries } from '../../services/salonService';
 
 import bridalHero from '../../assets/bridal-hero.jpg';
 import bridalKandyan from '../../assets/bridal-kandyan.jpg';
@@ -270,6 +271,59 @@ export default function BridalInquiriesPage() {
   const [inquiries, setInquiries] = useState(INITIAL_INQUIRIES);
   const [selectedId, setSelectedId] = useState('inq-natasha');
   const [quoteSentId, setQuoteSentId] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    fetchBridalInquiries().then(({ data }) => {
+      if (!active || !Array.isArray(data) || data.length === 0) return;
+      const mapped = data.map((row) => ({
+        id: row.id,
+        refCode: row.ref_code,
+        name: row.bride_name,
+        email: row.email,
+        phone: row.phone || '+94 77 000 0000',
+        avatar: bridalHero,
+        statusKey: row.status || 'new',
+        statusBadge:
+          row.status === 'confirmed'
+            ? 'Confirmed'
+            : row.status === 'trial'
+              ? 'Trial Booked'
+              : 'New Request',
+        headerBadge:
+          row.status === 'confirmed'
+            ? 'Confirmed Wedding'
+            : row.status === 'trial'
+              ? 'Trial Scheduled'
+              : 'New Inquiry',
+        badgeClass:
+          row.status === 'confirmed'
+            ? 'bg-[#D5E8D7] text-[#355A3A]'
+            : row.status === 'trial'
+              ? 'bg-[#EFE0C6] text-[#7A6444]'
+              : 'bg-[#DFE4DF] text-[#4A5B4B]',
+        date: row.event_date || 'Date TBD',
+        venue: row.venue || 'Colombo',
+        packageLabel: row.package_name || 'COMPLETE BRIDAL SANCTUARY',
+        styleNotes: row.style_notes || '"Bespoke organic bridal styling."',
+        organicRequested: true,
+        bridalParty: row.guest_count || 'Just the Bride',
+        mothersFamily: '2 Mothers',
+        addons: INITIAL_INQUIRIES[0].addons,
+        breakdown: [
+          {
+            label: `${row.package_name || 'Bridal Sanctuary'} (Estimated)`,
+            amount: row.quoted_total_lkr || 85000,
+          },
+        ],
+      }));
+      setInquiries(mapped);
+      setSelectedId(mapped[0].id);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const filteredInquiries = useMemo(() => {
     if (activeFilter === 'all') return inquiries;

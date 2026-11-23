@@ -18,6 +18,10 @@ import ritualSkin from '../../assets/ritual-skin.jpg';
 import ritualHair from '../../assets/ritual-hair.jpg';
 import bridalKandyan from '../../assets/bridal-kandyan.jpg';
 import ritualBridal from '../../assets/ritual-bridal.jpg';
+import {
+  createLookbookItem,
+  uploadLookbookImage,
+} from '../../services/salonService';
 
 const INITIAL_LOOKS = [
   {
@@ -92,6 +96,7 @@ export default function StylistProfilePage() {
     category: 'Balayage & Gloss',
     serviceTag: 'Signature Botanical Balayage',
     previewUrl: '',
+    file: null,
   });
 
   const filteredLooks = useMemo(() => {
@@ -132,20 +137,35 @@ export default function StylistProfilePage() {
     );
   };
 
-  const handleUploadSubmit = (e) => {
+  const handleUploadSubmit = async (e) => {
     e.preventDefault();
     if (!newLook.title.trim()) return;
 
+    let uploadedUrl = '';
+    if (newLook.file) {
+      const { url } = await uploadLookbookImage(newLook.file, 'lookbook');
+      if (url) uploadedUrl = url;
+    }
+
+    const { data } = await createLookbookItem({
+      title: newLook.title.trim(),
+      category: newLook.category,
+      linked_service: newLook.serviceTag,
+      specialist_name: 'Nethmi Perera',
+      status: 'Pending Admin Review',
+      image_url: uploadedUrl,
+    });
+
     setLooks((prev) => [
       {
-        id: `sl-${Date.now()}`,
+        id: data?.id || `sl-${Date.now()}`,
         title: newLook.title.trim(),
         category: newLook.category,
         status: 'Pending Admin Review',
         serviceTag: newLook.serviceTag,
         views: '0',
         saves: 0,
-        image: newLook.previewUrl || heroPortrait,
+        image: uploadedUrl || newLook.previewUrl || heroPortrait,
       },
       ...prev,
     ]);
@@ -154,6 +174,7 @@ export default function StylistProfilePage() {
       category: 'Balayage & Gloss',
       serviceTag: 'Signature Botanical Balayage',
       previewUrl: '',
+      file: null,
     });
     setShowUploadModal(false);
   };
@@ -443,6 +464,7 @@ export default function StylistProfilePage() {
                     if (file) {
                       setNewLook({
                         ...newLook,
+                        file,
                         previewUrl: URL.createObjectURL(file),
                       });
                     }

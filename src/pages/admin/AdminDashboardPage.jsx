@@ -15,6 +15,7 @@ import {
   Users,
   Wallet,
 } from 'lucide-react';
+import { createStaffNote } from '../../services/salonService';
 
 const FLOW_DATASETS = {
   Today: {
@@ -166,9 +167,16 @@ export default function AdminDashboardPage() {
     );
   };
 
-  const handlePostNote = (e) => {
+  const handlePostNote = async (e) => {
     e.preventDefault();
     if (!newNote.trim()) return;
+    const text = newNote.trim();
+    await createStaffNote({
+      area: 'Owner Desk',
+      author_name: 'By Admin',
+      body: text,
+      accent_color: 'sage',
+    });
     setNotes((prev) => [
       {
         id: `note-${Date.now()}`,
@@ -176,7 +184,7 @@ export default function AdminDashboardPage() {
         time: 'Just now',
         author: 'By Admin',
         accent: 'border-l-[#4A5B4B]',
-        body: newNote.trim(),
+        body: text,
       },
       ...prev,
     ]);

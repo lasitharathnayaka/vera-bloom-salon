@@ -13,6 +13,7 @@ import bridalHero from '../../assets/bridal-hero.jpg';
 import bridalKandyan from '../../assets/bridal-kandyan.jpg';
 import bridalModern from '../../assets/ritual-bridal.jpg';
 import bridalPrep from '../../assets/bridal-prep.jpg';
+import { submitBridalInquiry } from '../../services/salonService';
 
 const BRIDAL_PACKAGES = [
   {
@@ -137,8 +138,16 @@ export default function BridalPage() {
       ?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    await submitBridalInquiry({
+      bride_name: formState.fullName,
+      email: formState.email,
+      event_date: formState.eventDate || null,
+      venue: formState.venue,
+      guest_count: formState.guestCount,
+      style_notes: formState.notes,
+    });
     setSubmitted(true);
   };
 

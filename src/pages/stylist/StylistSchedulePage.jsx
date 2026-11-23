@@ -10,6 +10,7 @@ import {
   TrendingUp,
   X,
 } from 'lucide-react';
+import { submitShiftRequest } from '../../services/salonService';
 
 const WEEKLY_SHIFTS = [
   {
@@ -133,8 +134,14 @@ export default function StylistSchedulePage() {
     setTimeout(() => setExported(false), 2400);
   };
 
-  const handleRequestSubmit = (e) => {
+  const handleRequestSubmit = async (e) => {
     e.preventDefault();
+    await submitShiftRequest({
+      specialist_name: 'Nethmi Perera',
+      request_type: requestForm.type,
+      shift_day: requestForm.day,
+      reason: requestForm.reason,
+    });
     setRequestSubmitted(true);
     setTimeout(() => {
       setShowRequestModal(false);

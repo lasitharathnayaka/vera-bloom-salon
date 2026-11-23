@@ -15,6 +15,7 @@ import {
   Tag,
   X,
 } from 'lucide-react';
+import { createInvoice } from '../../services/salonService';
 
 const TREATMENTS = [
   {
@@ -439,7 +440,22 @@ export default function PosCheckoutPage() {
             {/* Complete Payment Button */}
             <button
               type="button"
-              onClick={() => setPaymentCompleted(true)}
+              onClick={async () => {
+                await createInvoice({
+                  customer_name: 'Emma Vance',
+                  subtotal_lkr: subtotal,
+                  discount_lkr: discount,
+                  service_charge_lkr: serviceCharge,
+                  total_lkr: totalPayable,
+                  payment_method: paymentMethod,
+                  status: 'paid',
+                  items_json: [
+                    ...TREATMENTS.map((t) => ({ name: t.name, price: t.price })),
+                    ...retailItems.map((r) => ({ name: r.name, price: r.price })),
+                  ],
+                });
+                setPaymentCompleted(true);
+              }}
               className="mt-6 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#6B7E6C] px-5 py-4 text-[13px] font-medium tracking-wide text-[#FAF8F5] shadow-sm transition-colors hover:bg-[#4A5B4B]"
             >
               <CheckCircle2 className="h-4 w-4" strokeWidth={1.9} />

@@ -13,6 +13,7 @@ import {
 
 import ritualHair from '../../assets/ritual-hair.jpg';
 import heroPortrait from '../../assets/hero-portrait.jpg';
+import { saveClientFormula } from '../../services/salonService';
 
 const INITIAL_HISTORY = [
   {
@@ -110,12 +111,25 @@ export default function ClientFormulasPage() {
     setter(URL.createObjectURL(file));
   };
 
-  const handleSaveSession = (e) => {
+  const handleSaveSession = async (e) => {
     e.preventDefault();
     const todayLabel = new Date().toLocaleDateString('en-US', {
       month: 'long',
       day: '2-digit',
       year: 'numeric',
+    });
+
+    await saveClientFormula({
+      customer_name: clientName,
+      stylist_name: 'Nethmi Perera',
+      visit_tag: 'LIVE SESSION SAVED',
+      hair_formula: formulaText,
+      processing_time: processingTime,
+      heat_application: heatApplication,
+      skin_scalp_notes: scalpNotes,
+      retail_recommendations: recommendations
+        .filter((r) => r.checked)
+        .map((r) => r.name),
     });
 
     setHistory((prev) => [

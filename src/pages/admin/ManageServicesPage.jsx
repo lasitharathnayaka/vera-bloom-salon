@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
   ListFilter,
@@ -8,6 +8,12 @@ import {
   Upload,
   X,
 } from 'lucide-react';
+import {
+  createService,
+  deleteService,
+  fetchServices,
+  updateService,
+} from '../../services/salonService';
 
 import heroPortrait from '../../assets/hero-portrait.jpg';
 import ritualSkin from '../../assets/ritual-skin.jpg';
@@ -109,6 +115,36 @@ export default function ManageServicesPage() {
   const [treatments, setTreatments] = useState(INITIAL_TREATMENTS);
   const [uploads, setUploads] = useState(INITIAL_LOOKBOOK_UPLOADS);
 
+  useEffect(() => {
+    let active = true;
+    fetchServices().then(({ data }) => {
+      if (!active || !Array.isArray(data) || data.length === 0) return;
+      setTreatments(
+        data.map((s) => ({
+          id: s.id,
+          name: s.name,
+          description: s.description,
+          category:
+            s.category_id === 'hair'
+              ? 'Hair & Color'
+              : s.category_id === 'facials'
+                ? 'Facials'
+                : s.category_id === 'nails'
+                  ? 'Nails'
+                  : s.category_id === 'bridal'
+                    ? 'Bridal'
+                    : 'Waxing',
+          duration: s.duration_mins,
+          price: s.price_lkr,
+          onlineBooking: s.online_booking,
+        }))
+      );
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   // Modal state for Add / Edit Treatment
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -135,16 +171,20 @@ export default function ManageServicesPage() {
     });
   }, [treatments, selectedCategory, filterText]);
 
-  const toggleOnlineBooking = (id) => {
+  const toggleOnlineBooking = async (id) => {
+    const target = treatments.find((t) => t.id === id);
+    const nextVal = target ? !target.onlineBooking : true;
     setTreatments((prev) =>
       prev.map((t) =>
-        t.id === id ? { ...t, onlineBooking: !t.onlineBooking } : t
+        t.id === id ? { ...t, onlineBooking: nextVal } : t
       )
     );
+    await updateService(id, { online_booking: nextVal });
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     setTreatments((prev) => prev.filter((t) => t.id !== id));
+    await deleteService(id);
   };
 
   const openAddModal = () => {
@@ -173,11 +213,29 @@ export default function ManageServicesPage() {
     setModalOpen(true);
   };
 
-  const handleSaveTreatment = (e) => {
+  const handleSaveTreatment = async (e) => {
     e.preventDefault();
     if (!formState.name.trim()) return;
 
+    const catMap = {
+      'Hair & Color': { id: 'hair', name: 'Hair & Botanical Color' },
+      Facials: { id: 'facials', name: 'Holistic Facials' },
+      Nails: { id: 'nails', name: 'Nails & Hand Spa' },
+      Bridal: { id: 'bridal', name: 'Bridal Packages' },
+      Waxing: { id: 'waxing', name: 'Waxing & Threading' },
+    };
+    const mappedCat = catMap[formState.category] || catMap['Hair & Color'];
+
     if (editingId) {
+      await updateService(editingId, {
+        name: formState.name.trim(),
+        description: formState.description.trim(),
+        category_id: mappedCat.id,
+        category_name: mappedCat.name,
+        duration_mins: Number(formState.duration),
+        price_lkr: Number(formState.price),
+        online_booking: formState.onlineBooking,
+      });
       setTreatments((prev) =>
         prev.map((t) =>
           t.id === editingId
@@ -191,9 +249,23 @@ export default function ManageServicesPage() {
         )
       );
     } else {
+      const slug = `${formState.name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')}-${Date.now().toString().slice(-4)}`;
+      const { data } = await createService({
+        slug,
+        name: formState.name.trim(),
+        description: formState.description.trim(),
+        category_id: mappedCat.id,
+        category_name: mappedCat.name,
+        duration_mins: Number(formState.duration),
+        price_lkr: Number(formState.price),
+        online_booking: formState.onlineBooking,
+      });
       setTreatments((prev) => [
         {
-          id: `tr-${Date.now()}`,
+          id: data?.id || `tr-${Date.now()}`,
           ...formState,
           duration: Number(formState.duration),
           price: Number(formState.price),

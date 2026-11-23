@@ -42,7 +42,7 @@ function BrandMark() {
 }
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
 
   const [selectedRole, setSelectedRole] = useState(ROLES.CUSTOMER);
@@ -51,18 +51,25 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [resetSent, setResetSent] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const roleConfig =
-      ROLE_OPTIONS.find((r) => r.id === selectedRole) || ROLE_OPTIONS[0];
+    setAuthError('');
+    setSubmitting(true);
 
-    login({
-      id: `user-${Date.now()}`,
-      name: email.split('@')[0] || 'Sanctuary Guest',
-      email,
-      role: selectedRole,
-    });
+    const { profile, error } = await signIn({ email, password });
+    setSubmitting(false);
+
+    if (error) {
+      setAuthError(error.message || 'Unable to sign in. Check your credentials.');
+      return;
+    }
+
+    const resolvedRole = profile?.role || selectedRole;
+    const roleConfig =
+      ROLE_OPTIONS.find((r) => r.id === resolvedRole) || ROLE_OPTIONS[0];
 
     navigate(roleConfig.redirect);
   };
@@ -236,11 +243,18 @@ export default function LoginPage() {
               <span>Keep me signed in on this device</span>
             </label>
 
+            {authError && (
+              <p className="rounded-lg bg-[#F4E1DE] px-3.5 py-2 text-[12px] font-medium text-[#A44A3F]">
+                {authError}
+              </p>
+            )}
+
             <button
               type="submit"
-              className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#4A5B4B] py-3.5 text-[13px] font-medium tracking-wide text-[#FAF8F5] shadow-xs transition-colors hover:bg-[#3B4A3C]"
+              disabled={submitting}
+              className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#4A5B4B] py-3.5 text-[13px] font-medium tracking-wide text-[#FAF8F5] shadow-xs transition-colors hover:bg-[#3B4A3C] disabled:opacity-60"
             >
-              <span>Sign In</span>
+              <span>{submitting ? 'Signing In...' : 'Sign In'}</span>
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>

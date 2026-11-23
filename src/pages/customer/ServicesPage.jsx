@@ -6,6 +6,7 @@ import {
   SERVICE_CATEGORIES,
   formatLKR,
 } from '../../data/servicesData';
+import { fetchServices } from '../../services/salonService';
 
 const RITUAL_TO_CATEGORY = {
   'organic-hair-couture': 'hair',
@@ -25,6 +26,7 @@ export default function ServicesPage() {
     return 'all';
   }, [searchParams]);
 
+  const [categories, setCategories] = useState(SERVICE_CATEGORIES);
   const [activeCategory, setActiveCategory] = useState(initialCategory);
 
   // Pre-select the two rituals shown in the design so the summary card is immediately populated
@@ -32,6 +34,32 @@ export default function ServicesPage() {
     'organic-botanical-hair-glossing',
     'cell-renewal-botanical-facial',
   ]);
+
+  useEffect(() => {
+    let active = true;
+    fetchServices().then(({ data }) => {
+      if (!active || !Array.isArray(data) || data.length === 0) return;
+      const online = data.filter((s) => s.online_booking !== false);
+      if (online.length === 0) return;
+      const grouped = SERVICE_CATEGORIES.map((cat) => ({
+        ...cat,
+        items: online
+          .filter((s) => s.category_id === cat.id)
+          .map((s) => ({
+            id: s.slug || s.id,
+            name: s.name,
+            badge: s.badge,
+            description: s.description,
+            duration: s.duration_mins,
+            price: s.price_lkr,
+          })),
+      })).filter((cat) => cat.items.length > 0);
+      if (grouped.length > 0) setCategories(grouped);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     setActiveCategory(initialCategory);
@@ -59,13 +87,28 @@ export default function ServicesPage() {
   };
 
   const visibleCategories = useMemo(() => {
-    if (activeCategory === 'all') return SERVICE_CATEGORIES;
-    return SERVICE_CATEGORIES.filter((cat) => cat.id === activeCategory);
-  }, [activeCategory]);
+    if (activeCategory === 'all') return categories;
+    return categories.filter((cat) => cat.id === activeCategory);
+  }, [activeCategory, categories]);
+
+  const flatServices = useMemo(
+    () =>
+      categories.flatMap((cat) =>
+        cat.items.map((item) => ({
+          ...item,
+          categoryId: cat.id,
+          categoryName: cat.name,
+        }))
+      ),
+    [categories]
+  );
 
   const selectedServices = useMemo(
-    () => ALL_SERVICES.filter((svc) => selectedIds.includes(svc.id)),
-    [selectedIds]
+    () =>
+      (flatServices.length ? flatServices : ALL_SERVICES).filter((svc) =>
+        selectedIds.includes(svc.id)
+      ),
+    [selectedIds, flatServices]
   );
 
   const totalDuration = useMemo(

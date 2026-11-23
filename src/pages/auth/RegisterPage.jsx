@@ -45,7 +45,7 @@ function BrandMark() {
 }
 
 export default function RegisterPage() {
-  const { login } = useAuth();
+  const { signUp } = useAuth();
   const navigate = useNavigate();
 
   const [role, setRole] = useState(ROLES.CUSTOMER);
@@ -63,6 +63,8 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(true);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [verifyNotice, setVerifyNotice] = useState('');
 
   const toggleInterest = (tag) => {
     setSelectedInterests((prev) =>
@@ -70,20 +72,38 @@ export default function RegisterPage() {
     );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (form.password !== form.confirmPassword) {
       setError('Passwords do not match. Please check and try again.');
       return;
     }
     setError('');
-    login({
-      id: `user-${Date.now()}`,
-      name: `${form.firstName} ${form.lastName}`.trim() || 'Sanctuary Guest',
+    setVerifyNotice('');
+    setSubmitting(true);
+
+    const { data, error: signUpError } = await signUp({
       email: form.email,
+      password: form.password,
+      fullName: `${form.firstName} ${form.lastName}`.trim(),
+      phone: form.phone,
       role,
     });
-    navigate(role === ROLES.STYLIST ? '/stylist' : '/profile');
+
+    setSubmitting(false);
+
+    if (signUpError) {
+      setError(signUpError.message || 'Could not create account.');
+      return;
+    }
+
+    if (data?.session) {
+      navigate(role === ROLES.STYLIST ? '/stylist' : '/profile');
+    } else {
+      setVerifyNotice(
+        'Account created! Please check your email to confirm your address before signing in.'
+      );
+    }
   };
 
   return (
@@ -319,7 +339,15 @@ export default function RegisterPage() {
             </div>
 
             {error && (
-              <p className="text-[12px] font-medium text-[#B64B42]">{error}</p>
+              <p className="rounded-lg bg-[#F4E1DE] px-3.5 py-2 text-[12px] font-medium text-[#B64B42]">
+                {error}
+              </p>
+            )}
+
+            {verifyNotice && (
+              <p className="rounded-lg bg-[#D5E8D7] px-3.5 py-2.5 text-[12px] font-medium text-[#355A3A]">
+                {verifyNotice}
+              </p>
             )}
 
             {/* Ritual Interests */}
@@ -366,9 +394,12 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#4A5B4B] py-3.5 text-[13px] font-medium tracking-wide text-[#FAF8F5] shadow-xs transition-colors hover:bg-[#3B4A3C]"
+              disabled={submitting}
+              className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#4A5B4B] py-3.5 text-[13px] font-medium tracking-wide text-[#FAF8F5] shadow-xs transition-colors hover:bg-[#3B4A3C] disabled:opacity-60"
             >
-              <span>Create Sanctuary Account</span>
+              <span>
+                {submitting ? 'Creating Account...' : 'Create Sanctuary Account'}
+              </span>
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>

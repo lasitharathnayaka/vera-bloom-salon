@@ -20,6 +20,8 @@ import {
   TIME_SLOT_GROUPS,
 } from '../../data/specialistsData';
 import { formatLKR } from '../../data/servicesData';
+import { createAppointment } from '../../services/salonService';
+import { useAuth } from '../../hooks/useAuth';
 
 const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
@@ -84,6 +86,9 @@ function isSameDay(a, b) {
 
 export default function BookingPage() {
   const location = useLocation();
+  const { user } = useAuth();
+  const [bookingRef, setBookingRef] = useState('');
+  const [savingBooking, setSavingBooking] = useState(false);
 
   // Pull selected services passed from ServicesPage, or fall back to defaults
   const bookedServices = useMemo(() => {
@@ -143,8 +148,32 @@ export default function BookingPage() {
     setViewMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
 
-  const handleConfirmSubmit = (e) => {
+  const handleConfirmSubmit = async (e) => {
     e.preventDefault();
+    setSavingBooking(true);
+    const isoDate = selectedDate.toISOString().split('T')[0];
+
+    const { data } = await createAppointment(
+      {
+        customer_id: user?.id || null,
+        customer_name: guestDetails.fullName,
+        customer_email: guestDetails.email,
+        customer_phone: guestDetails.phone,
+        specialist_name: selectedSpecialist.name,
+        appointment_date: isoDate,
+        time_slot: selectedTime,
+        duration_mins: totalDuration,
+        total_lkr: estimatedTotal,
+        notes: guestDetails.notes,
+        status: 'confirmed',
+      },
+      bookedServices
+    );
+
+    if (data?.booking_ref) {
+      setBookingRef(data.booking_ref);
+    }
+    setSavingBooking(false);
     setIsConfirmed(true);
   };
 
