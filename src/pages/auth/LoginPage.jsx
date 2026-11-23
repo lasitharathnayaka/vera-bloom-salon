@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
@@ -14,7 +14,7 @@ import { ROLES } from '../../utils/constants';
 import heroPortrait from '../../assets/hero-portrait.jpg';
 
 const ROLE_OPTIONS = [
-  { id: ROLES.CUSTOMER, label: 'Customer', redirect: '/profile' },
+  { id: ROLES.CUSTOMER, label: 'Customer', redirect: '/' },
   { id: ROLES.STYLIST, label: 'Stylist', redirect: '/stylist' },
   { id: ROLES.ADMIN, label: 'Admin', redirect: '/admin' },
 ];
@@ -42,8 +42,11 @@ function BrandMark() {
 }
 
 export default function LoginPage() {
-  const { signIn } = useAuth();
+  const { user, signIn, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromPath = location.state?.from?.pathname;
+  const redirectNotice = location.state?.message;
 
   const [selectedRole, setSelectedRole] = useState(ROLES.CUSTOMER);
   const [email, setEmail] = useState('');
@@ -71,7 +74,16 @@ export default function LoginPage() {
     const roleConfig =
       ROLE_OPTIONS.find((r) => r.id === resolvedRole) || ROLE_OPTIONS[0];
 
-    navigate(roleConfig.redirect);
+    const canReturnToFrom =
+      fromPath &&
+      ((fromPath.startsWith('/admin') && resolvedRole === ROLES.ADMIN) ||
+        (fromPath.startsWith('/stylist') &&
+          (resolvedRole === ROLES.STYLIST || resolvedRole === ROLES.ADMIN)) ||
+        (!fromPath.startsWith('/admin') && !fromPath.startsWith('/stylist')));
+
+    navigate(canReturnToFrom ? fromPath : roleConfig.redirect, {
+      replace: true,
+    });
   };
 
   return (
@@ -146,6 +158,51 @@ export default function LoginPage() {
             Access your scheduled rituals, personalized botanical formulas, or
             team workspace.
           </p>
+
+          {/* Redirect Notice when arriving from a protected route */}
+          {redirectNotice && !user && (
+            <div className="mt-5 flex items-start gap-2.5 rounded-2xl border border-[#E5D4B3] bg-[#F7EEDB] px-4 py-3 text-[12px] font-medium text-[#6B5028]">
+              <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>{redirectNotice}</span>
+            </div>
+          )}
+
+          {/* Active Session Shortcut (for Admin / Stylist / Customer) */}
+          {user && (
+            <div className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-[#DCE5DD] bg-[#F2F6F2] px-4 py-3.5 text-xs">
+              <div>
+                <p className="font-semibold text-[#2A2927]">
+                  Signed in as {user.name} ({user.role})
+                </p>
+                <p className="text-[11px] text-[#6C6961]">{user.email}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link
+                  to={
+                    user.role === ROLES.ADMIN
+                      ? '/admin'
+                      : user.role === ROLES.STYLIST
+                        ? '/stylist'
+                        : '/booking'
+                  }
+                  className="rounded-lg bg-[#4A5B4B] px-3.5 py-1.5 text-[11px] font-semibold text-[#FAF8F5] hover:bg-[#3B4A3C]"
+                >
+                  {user.role === ROLES.ADMIN
+                    ? 'Open Admin Portal'
+                    : user.role === ROLES.STYLIST
+                      ? 'Open Stylist Portal'
+                      : 'Book a Ritual'}
+                </Link>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="cursor-pointer rounded-lg border border-[#DCD7CC] bg-[#FAF8F5] px-3 py-1.5 text-[11px] font-medium text-[#57544E] hover:bg-[#EFECE6]"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Portal Role Selector */}
           <div className="mt-7">
