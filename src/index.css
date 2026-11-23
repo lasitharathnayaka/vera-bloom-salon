@@ -25,3 +25,30 @@
     color: #2A2927;
   }
 }
+
+@keyframes kenBurnsSlow {
+  0% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1.09) translate3d(-1.2%, -0.8%, 0);
+  }
+}
+
+@keyframes progressFill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.animate-ken-burns {
+  animation: kenBurnsSlow 7s ease-out forwards;
+}
+
+.animate-slide-progress {
+  transform-origin: left center;
+  animation: progressFill 5.5s linear forwards;
+}

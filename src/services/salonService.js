@@ -106,6 +106,16 @@ export async function fetchBridalInquiries() {
     .order('created_at', { ascending: false });
 }
 
+export async function updateBridalInquiry(id, updates) {
+  if (!supabase) return { data: null, error: null };
+  return supabase
+    .from('bridal_inquiries')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+}
+
 // ================= CLIENT FORMULAS =================
 export async function fetchClientFormulas(customerName) {
   if (!supabase) return { data: null, error: null };

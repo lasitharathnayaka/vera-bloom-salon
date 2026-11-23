@@ -98,7 +98,7 @@ export default function RegisterPage() {
     }
 
     if (data?.session) {
-      navigate(role === ROLES.STYLIST ? '/stylist' : '/profile');
+      navigate(role === ROLES.STYLIST ? '/stylist' : '/');
     } else {
       setVerifyNotice(
         'Account created! Please check your email to confirm your address before signing in.'
