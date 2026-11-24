@@ -45,8 +45,19 @@ function BrandMark() {
 }
 
 export default function RegisterPage() {
-  const { signUp } = useAuth();
+  const { signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleGoogleSignUp = async () => {
+    setError('');
+    setGoogleLoading(true);
+    const { error: gErr } = await signInWithGoogle('/');
+    if (gErr) {
+      setGoogleLoading(false);
+      setError(gErr.message || 'Google sign-in is not enabled yet.');
+    }
+  };
 
   const [role, setRole] = useState(ROLES.CUSTOMER);
   const [form, setForm] = useState({
@@ -403,6 +414,41 @@ export default function RegisterPage() {
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>
+
+          <div className="my-5 flex items-center gap-3 text-[11px] text-[#9A958C]">
+            <span className="h-px flex-1 bg-[#E6E2DA]" />
+            <span>or</span>
+            <span className="h-px flex-1 bg-[#E6E2DA]" />
+          </div>
+
+          <button
+            type="button"
+            disabled={googleLoading}
+            onClick={handleGoogleSignUp}
+            className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border border-[#DFDBD2] bg-[#FAF8F5] py-3 text-[13px] font-medium text-[#2A2927] shadow-2xs transition-colors hover:bg-[#F3F0EA] disabled:opacity-60"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="#4285F4"
+                d="M23.49 12.27c0-.79-.07-1.54-.2-2.27H12v4.51h6.47a5.53 5.53 0 0 1-2.4 3.63v3.02h3.88c2.27-2.09 3.54-5.17 3.54-8.89Z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 24c3.24 0 5.95-1.07 7.94-2.91l-3.88-3.02c-1.07.72-2.45 1.15-4.06 1.15-3.12 0-5.77-2.11-6.72-4.96H1.27v3.12A12 12 0 0 0 12 24Z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.28 14.26A7.2 7.2 0 0 1 4.9 12c0-.78.14-1.54.38-2.26V6.62H1.27A12 12 0 0 0 0 12c0 1.94.46 3.77 1.27 5.38l4.01-3.12Z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 4.77c1.76 0 3.34.61 4.58 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.27 6.62l4.01 3.12C6.23 6.88 8.88 4.77 12 4.77Z"
+              />
+            </svg>
+            <span>
+              {googleLoading ? 'Connecting to Google...' : 'Continue with Google'}
+            </span>
+          </button>
 
           <p className="mt-6 text-center text-[13px] text-[#6C6961]">
             Already have an account?{' '}
