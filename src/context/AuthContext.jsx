@@ -128,6 +128,28 @@ export function AuthProvider({ children }) {
     return { data, profile: prof, error: null };
   };
 
+  const signInWithGoogle = async (redirectPath = '/') => {
+    if (!supabase) {
+      return {
+        data: null,
+        error: new Error('Supabase is not configured for Google sign-in.'),
+      };
+    }
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}${redirectPath}`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
+
+    return { data, error };
+  };
+
   const signOut = async () => {
     if (supabase) {
       await supabase.auth.signOut();
@@ -153,6 +175,7 @@ export function AuthProvider({ children }) {
         loading,
         signIn,
         signUp,
+        signInWithGoogle,
         signOut,
         login,
         logout,

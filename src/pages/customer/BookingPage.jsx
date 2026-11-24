@@ -3,18 +3,24 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
+  Banknote,
+  Building2,
   Calendar,
   Check,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock,
+  CreditCard,
   Flower2,
   Hourglass,
+  Lock,
+  QrCode,
   ShieldCheck,
   Sparkles,
   Star,
   User,
+  Wallet,
 } from 'lucide-react';
 import {
   DEFAULT_BOOKING_SERVICES,
@@ -27,6 +33,44 @@ import { useAuth } from '../../hooks/useAuth';
 import wallpaperSanctuary from '../../assets/wallpaper-sanctuary.jpg';
 
 const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+
+const CUSTOMER_PAYMENT_METHODS = [
+  {
+    id: 'credit_card',
+    label: 'Credit Card',
+    subtitle: 'Visa, Mastercard or Amex',
+    badge: 'Instant',
+    icon: CreditCard,
+  },
+  {
+    id: 'debit_card',
+    label: 'Debit Card',
+    subtitle: 'Visa Debit or Mastercard Debit',
+    badge: 'Direct Bank',
+    icon: CreditCard,
+  },
+  {
+    id: 'qr',
+    label: 'LankaQR / Bank Transfer',
+    subtitle: 'FriMi, Genie, or instant bank',
+    badge: 'Zero Fee',
+    icon: QrCode,
+  },
+  {
+    id: 'bnpl',
+    label: 'Koko / Mintpay',
+    subtitle: '3 interest-free installments',
+    badge: '3× Split',
+    icon: Wallet,
+  },
+  {
+    id: 'salon',
+    label: 'Pay at Sanctuary',
+    subtitle: 'Card or cash upon arrival',
+    badge: 'LKR 0 Today',
+    icon: Banknote,
+  },
+];
 
 function getCalendarCells(year, monthIndex) {
   const firstDay = new Date(year, monthIndex, 1);
@@ -131,7 +175,33 @@ export default function BookingPage() {
     phone: '',
     notes: '',
   });
+  const [paymentMethod, setPaymentMethod] = useState('credit_card');
+  const [paymentPlan, setPaymentPlan] = useState('deposit'); // 'deposit' | 'full'
+  const [cardDetails, setCardDetails] = useState({
+    holder: user?.name || '',
+    number: '',
+    expiry: '',
+    cvc: '',
+  });
+  const [transferRef, setTransferRef] = useState('');
   const [isConfirmed, setIsConfirmed] = useState(false);
+
+  const selectedPaymentMeta = useMemo(
+    () =>
+      CUSTOMER_PAYMENT_METHODS.find((m) => m.id === paymentMethod) ||
+      CUSTOMER_PAYMENT_METHODS[0],
+    [paymentMethod]
+  );
+
+  const depositAmount = Math.round(estimatedTotal * 0.25);
+  const installmentAmount = Math.round(estimatedTotal / 3);
+  const dueToday = useMemo(() => {
+    if (paymentMethod === 'salon') return 0;
+    if (paymentMethod === 'bnpl') return installmentAmount;
+    return paymentPlan === 'full' ? estimatedTotal : depositAmount;
+  }, [paymentMethod, paymentPlan, estimatedTotal, depositAmount, installmentAmount]);
+
+  const balanceAtSalon = Math.max(0, estimatedTotal - dueToday);
 
   const selectedSpecialist = useMemo(
     () =>
@@ -157,6 +227,14 @@ export default function BookingPage() {
     setSavingBooking(true);
     const isoDate = selectedDate.toISOString().split('T')[0];
 
+    const paymentNote = `Payment: ${selectedPaymentMeta.label}${
+      dueToday > 0 ? ` (${formatLKR(dueToday)} paid online)` : ' (Pay at Sanctuary)'
+    }${transferRef.trim() ? ` • Ref: ${transferRef.trim()}` : ''}`;
+
+    const combinedNotes = [guestDetails.notes.trim(), paymentNote]
+      .filter(Boolean)
+      .join(' | ');
+
     const { data } = await createAppointment(
       {
         customer_id: user?.id || null,
@@ -168,7 +246,8 @@ export default function BookingPage() {
         time_slot: selectedTime,
         duration_mins: totalDuration,
         total_lkr: estimatedTotal,
-        notes: guestDetails.notes,
+        deposit_lkr: dueToday,
+        notes: combinedNotes,
         status: 'confirmed',
       },
       bookedServices
@@ -511,16 +590,43 @@ export default function BookingPage() {
                       </strong>{' '}
                       has been reserved.
                     </p>
+
+                    {/* Confirmed Payment Pass */}
+                    <div className="mx-auto mt-6 grid max-w-md grid-cols-2 gap-3 rounded-2xl border border-[#E6E2DA] bg-[#F5F2EC] p-4 text-left text-xs">
+                      <div>
+                        <p className="text-[10px] font-semibold tracking-wider text-[#8A867E] uppercase">
+                          Payment Method
+                        </p>
+                        <p className="mt-0.5 font-semibold text-[#222B23]">
+                          {selectedPaymentMeta.label}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-semibold tracking-wider text-[#8A867E] uppercase">
+                          {dueToday > 0 ? 'Paid Today' : 'Due at Sanctuary'}
+                        </p>
+                        <p className="mt-0.5 font-serif text-base font-semibold text-[#253026]">
+                          {dueToday > 0
+                            ? formatLKR(dueToday)
+                            : formatLKR(estimatedTotal)}
+                        </p>
+                      </div>
+                    </div>
+
                     <div className="mt-8 flex flex-wrap justify-center gap-3.5">
-                      <Link
-                        to="/profile"
-                        className="rounded-xl bg-[#4A5B4B] px-6 py-3 text-xs font-semibold text-[#FAF8F5] transition-colors hover:bg-[#3B4A3C]"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsConfirmed(false);
+                          setStep(2);
+                        }}
+                        className="cursor-pointer rounded-full bg-[#253026] px-6 py-3 text-xs font-semibold text-[#FAF8F5] transition-colors hover:bg-[#344335]"
                       >
-                        View in My Sanctuary
-                      </Link>
+                        Book Another Ritual
+                      </button>
                       <Link
                         to="/"
-                        className="rounded-xl border border-[#DCD7CC] bg-[#F6F4EF] px-6 py-3 text-xs font-semibold text-[#2A2927] transition-colors hover:bg-[#ECE8E0]"
+                        className="rounded-full border border-[#DCD7CC] bg-[#F6F4EF] px-6 py-3 text-xs font-semibold text-[#2A2927] transition-colors hover:bg-[#ECE8E0]"
                       >
                         Return Home
                       </Link>
@@ -611,7 +717,7 @@ export default function BookingPage() {
                           Sensitivities or Ritual Preferences (Optional)
                         </label>
                         <textarea
-                          rows={3}
+                          rows={2}
                           value={guestDetails.notes}
                           onChange={(e) =>
                             setGuestDetails({
@@ -624,17 +730,297 @@ export default function BookingPage() {
                         />
                       </div>
 
+                      {/* ================= PAYMENT METHOD SELECTION ================= */}
+                      <div className="border-t border-[#ECE8E0] pt-6">
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <div>
+                            <p className="text-[10px] font-semibold tracking-[0.22em] text-[#6B786A] uppercase">
+                              Secure Sanctuary Checkout
+                            </p>
+                            <h3 className="mt-0.5 font-serif text-2xl font-semibold text-[#222B23]">
+                              Select Payment Method
+                            </h3>
+                          </div>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6C6961]">
+                            <Lock className="h-3 w-3 text-[#4A5B4B]" />
+                            256-Bit Encrypted
+                          </span>
+                        </div>
+
+                        {/* 4 Modern Payment Method Cards */}
+                        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          {CUSTOMER_PAYMENT_METHODS.map((method) => {
+                            const Icon = method.icon;
+                            const active = paymentMethod === method.id;
+                            return (
+                              <button
+                                key={method.id}
+                                type="button"
+                                onClick={() => setPaymentMethod(method.id)}
+                                className={`flex cursor-pointer items-start justify-between gap-3 rounded-2xl border p-4 text-left transition-all ${
+                                  active
+                                    ? 'border-[#253026] bg-[#253026] text-[#FAF8F5] shadow-md'
+                                    : 'border-[#E5E1D8] bg-[#F6F4EF] text-[#2A2927] hover:border-[#CFC9BE] hover:bg-[#FAF8F5]'
+                                }`}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <span
+                                    className={`mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                                      active
+                                        ? 'bg-white/12 text-[#EFE0C6]'
+                                        : 'bg-[#FAF8F5] text-[#4A5B4B]'
+                                    }`}
+                                  >
+                                    <Icon className="h-4 w-4" strokeWidth={1.8} />
+                                  </span>
+                                  <div>
+                                    <p className="text-[13px] font-semibold leading-tight">
+                                      {method.label}
+                                    </p>
+                                    <p
+                                      className={`mt-1 text-[11px] ${
+                                        active
+                                          ? 'text-[#C5D1C7]'
+                                          : 'text-[#7A766E]'
+                                      }`}
+                                    >
+                                      {method.subtitle}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <span
+                                  className={`shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-semibold ${
+                                    active
+                                      ? 'bg-[#EFE0C6] text-[#222B23]'
+                                      : 'bg-[#EAE5DC] text-[#57544E]'
+                                  }`}
+                                >
+                                  {method.badge}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Deposit vs Full Toggle (for Credit Card, Debit Card & LankaQR) */}
+                        {(paymentMethod === 'credit_card' ||
+                          paymentMethod === 'debit_card' ||
+                          paymentMethod === 'qr') && (
+                          <div className="mt-4 grid grid-cols-2 gap-2.5 rounded-2xl border border-[#E6E2DA] bg-[#F5F2EC] p-1.5 text-xs">
+                            <button
+                              type="button"
+                              onClick={() => setPaymentPlan('deposit')}
+                              className={`cursor-pointer rounded-xl px-3.5 py-2.5 text-left transition-all ${
+                                paymentPlan === 'deposit'
+                                  ? 'bg-[#FAF8F5] font-semibold text-[#222B23] shadow-2xs'
+                                  : 'text-[#6C6961] hover:text-[#222B23]'
+                              }`}
+                            >
+                              <span className="block text-[11.5px]">
+                                25% Booking Deposit
+                              </span>
+                              <span className="mt-0.5 block font-serif text-[14px] text-[#4A5B4B]">
+                                {formatLKR(depositAmount)} today
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPaymentPlan('full')}
+                              className={`cursor-pointer rounded-xl px-3.5 py-2.5 text-left transition-all ${
+                                paymentPlan === 'full'
+                                  ? 'bg-[#FAF8F5] font-semibold text-[#222B23] shadow-2xs'
+                                  : 'text-[#6C6961] hover:text-[#222B23]'
+                              }`}
+                            >
+                              <span className="block text-[11.5px]">
+                                Pay Full Amount
+                              </span>
+                              <span className="mt-0.5 block font-serif text-[14px] text-[#4A5B4B]">
+                                {formatLKR(estimatedTotal)} today
+                              </span>
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Contextual Panel: Credit Card / Debit Card */}
+                        {(paymentMethod === 'credit_card' ||
+                          paymentMethod === 'debit_card') && (
+                          <div className="mt-4 space-y-3 rounded-2xl border border-[#E6E2DA] bg-[#F6F4EF] p-4">
+                            <div className="flex items-center justify-between border-b border-[#E6E2DA] pb-2.5 text-[11px]">
+                              <span className="font-semibold text-[#222B23]">
+                                {paymentMethod === 'credit_card'
+                                  ? 'Credit Card Details'
+                                  : 'Debit Card Details'}
+                              </span>
+                              <span className="text-[#7A766E]">
+                                {paymentMethod === 'credit_card'
+                                  ? 'Visa • Mastercard • Amex'
+                                  : 'Visa Debit • Mastercard Debit'}
+                              </span>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-semibold text-[#57544E]">
+                                Cardholder Name
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                value={cardDetails.holder}
+                                onChange={(e) =>
+                                  setCardDetails({
+                                    ...cardDetails,
+                                    holder: e.target.value,
+                                  })
+                                }
+                                placeholder="Name on card"
+                                className="mt-1 w-full rounded-xl border border-[#E2DDD4] bg-[#FAF8F5] px-3.5 py-2.5 text-sm text-[#2A2927] focus:border-[#253026] focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-semibold text-[#57544E]">
+                                Card Number
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                inputMode="numeric"
+                                maxLength={19}
+                                value={cardDetails.number}
+                                onChange={(e) => {
+                                  const digits = e.target.value
+                                    .replace(/\D/g, '')
+                                    .slice(0, 16);
+                                  const formatted = digits.replace(
+                                    /(\d{4})(?=\d)/g,
+                                    '$1 '
+                                  );
+                                  setCardDetails({
+                                    ...cardDetails,
+                                    number: formatted,
+                                  });
+                                }}
+                                placeholder="4532 •••• •••• 8910"
+                                className="mt-1 w-full rounded-xl border border-[#E2DDD4] bg-[#FAF8F5] px-3.5 py-2.5 font-mono text-sm text-[#2A2927] focus:border-[#253026] focus:outline-none"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-[11px] font-semibold text-[#57544E]">
+                                  Expiry Date
+                                </label>
+                                <input
+                                  type="text"
+                                  required
+                                  maxLength={5}
+                                  value={cardDetails.expiry}
+                                  onChange={(e) =>
+                                    setCardDetails({
+                                      ...cardDetails,
+                                      expiry: e.target.value,
+                                    })
+                                  }
+                                  placeholder="MM/YY"
+                                  className="mt-1 w-full rounded-xl border border-[#E2DDD4] bg-[#FAF8F5] px-3.5 py-2.5 text-sm text-[#2A2927] focus:border-[#253026] focus:outline-none"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-semibold text-[#57544E]">
+                                  CVC / CVV
+                                </label>
+                                <input
+                                  type="password"
+                                  required
+                                  maxLength={4}
+                                  value={cardDetails.cvc}
+                                  onChange={(e) =>
+                                    setCardDetails({
+                                      ...cardDetails,
+                                      cvc: e.target.value,
+                                    })
+                                  }
+                                  placeholder="•••"
+                                  className="mt-1 w-full rounded-xl border border-[#E2DDD4] bg-[#FAF8F5] px-3.5 py-2.5 text-sm text-[#2A2927] focus:border-[#253026] focus:outline-none"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Contextual Panel: LankaQR / Bank Transfer */}
+                        {paymentMethod === 'qr' && (
+                          <div className="mt-4 space-y-3 rounded-2xl border border-[#E6E2DA] bg-[#F6F4EF] p-4 text-xs text-[#4A4741]">
+                            <div className="flex items-start gap-3">
+                              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#253026] text-[#EFE0C6]">
+                                <Building2 className="h-4.5 w-4.5" />
+                              </span>
+                              <div>
+                                <p className="font-semibold text-[#222B23]">
+                                  Commercial Bank &middot; Cinnamon Gardens
+                                </p>
+                                <p className="mt-0.5 text-[#6C6961]">
+                                  Account: <strong>Vera &amp; Bloom (Pvt) Ltd</strong>{' '}
+                                  &bull; No: <strong>1004 8821 90</strong>
+                                </p>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-semibold text-[#57544E]">
+                                Transfer / LankaQR Reference (Optional)
+                              </label>
+                              <input
+                                type="text"
+                                value={transferRef}
+                                onChange={(e) => setTransferRef(e.target.value)}
+                                placeholder="e.g. LQR-908412"
+                                className="mt-1 w-full rounded-xl border border-[#E2DDD4] bg-[#FAF8F5] px-3.5 py-2 text-xs text-[#2A2927] focus:border-[#253026] focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Contextual Panel: Koko / Mintpay */}
+                        {paymentMethod === 'bnpl' && (
+                          <div className="mt-4 rounded-2xl border border-[#E6E2DA] bg-[#F6F4EF] p-4 text-xs text-[#4A4741]">
+                            <p className="font-semibold text-[#222B23]">
+                              Split into 3 × {formatLKR(installmentAmount)}{' '}
+                              interest-free installments
+                            </p>
+                            <p className="mt-1 text-[#6C6961]">
+                              Pay {formatLKR(installmentAmount)} today and the
+                              remaining 2 payments automatically over the next 2
+                              months with 0% interest.
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Contextual Panel: Pay at Sanctuary */}
+                        {paymentMethod === 'salon' && (
+                          <div className="mt-4 rounded-2xl border border-[#E6E2DA] bg-[#F6F4EF] p-4 text-xs text-[#4A4741]">
+                            <p className="font-semibold text-[#222B23]">
+                              No upfront payment required today
+                            </p>
+                            <p className="mt-1 text-[#6C6961]">
+                              Settle your ritual at our Colombo 07 reception desk
+                              via Card, Cash, or LankaQR after your session.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
                       <button
                         type="submit"
                         disabled={savingBooking}
-                        className="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#4A5B4B] px-7 py-4 text-[13px] font-semibold tracking-wide text-[#FAF8F5] shadow-md transition-colors hover:bg-[#3B4A3C] disabled:opacity-60"
+                        className="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#253026] px-7 py-4 text-[13px] font-semibold tracking-wide text-[#FAF8F5] shadow-md transition-colors hover:bg-[#344335] disabled:opacity-60"
                       >
                         <span>
                           {savingBooking
                             ? 'Confirming Reservation...'
-                            : 'Confirm Sanctuary Reservation'}
+                            : dueToday > 0
+                              ? `Pay ${formatLKR(dueToday)} & Confirm Reservation`
+                              : 'Confirm Sanctuary Reservation'}
                         </span>
-                        <ArrowRight className="h-4 w-4" />
+                        <ArrowRight className="h-4 w-4 text-[#EFE0C6]" />
                       </button>
                     </form>
                   </div>
@@ -737,19 +1123,46 @@ export default function BookingPage() {
                   </div>
                 </div>
 
-                {/* Estimated Total */}
-                <div className="flex items-start justify-between pt-5">
-                  <div>
-                    <p className="font-serif text-[18px] font-medium text-[#FAF8F5]">
-                      Estimated Total
-                    </p>
-                    <p className="mt-0.5 text-[10.5px] text-[#9AA59B]">
-                      Inclusive of all local taxes
+                {/* Estimated Total & Payment Breakdown */}
+                <div className="space-y-2.5 pt-5">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-serif text-[18px] font-medium text-[#FAF8F5]">
+                        Estimated Total
+                      </p>
+                      <p className="mt-0.5 text-[10.5px] text-[#9AA59B]">
+                        Inclusive of all local taxes
+                      </p>
+                    </div>
+                    <p className="font-serif text-[24px] font-semibold text-[#EFE0C6]">
+                      {formatLKR(estimatedTotal)}
                     </p>
                   </div>
-                  <p className="font-serif text-[24px] font-semibold text-[#EFE0C6]">
-                    {formatLKR(estimatedTotal)}
-                  </p>
+
+                  {step === 3 && (
+                    <div className="space-y-1.5 rounded-2xl border border-white/10 bg-white/[0.06] p-3.5 text-[11.5px]">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#B9C2BA]">Payment Method</span>
+                        <span className="font-semibold text-[#FAF8F5]">
+                          {selectedPaymentMeta.label}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#B9C2BA]">Due Today</span>
+                        <span className="font-semibold text-[#EFE0C6]">
+                          {formatLKR(dueToday)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#B9C2BA]">
+                          Balance at Sanctuary
+                        </span>
+                        <span className="font-medium text-[#FAF8F5]">
+                          {formatLKR(balanceAtSalon)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* CTA Button */}
